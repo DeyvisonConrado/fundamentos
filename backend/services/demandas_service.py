@@ -1,5 +1,8 @@
 import datetime
+import threading
+import traceback
  
+from flask import current_app
 from config.extensions import db
 from models.demanda import Demanda
 from models.user import User
@@ -24,34 +27,57 @@ def _get_user_by_email(email: str) -> User:
 class DemandaService:
  
     @staticmethod
-    def criar_demanda(data: dict, email: str) -> Demanda:
-        """
-        Valida os dados e persiste uma nova demanda.
-        Recebe o e-mail do payload JWT para resolver o usuario_id.
-        """
-        schema = DemandaCreateSchema()
-        erros = schema.validate(data)
-        if erros:
-            raise ValueError(erros)
+    def _background_criar_demanda(data: dict, email: str, app):
+        with app.app_context():
+            try:
+                schema = DemandaCreateSchema()
+                erros = schema.validate(data)
+                if erros:
+                    raise ValueError(erros)
  
-        user = _get_user_by_email(email)
-        dados = schema.load(data)
+                user = _get_user_by_email(email)
+                dados = schema.load(data)
  
-        demanda = Demanda(
-            titulo=dados['titulo'],
-            descricao=dados['descricao'],
-            categoria=dados['categoria'],
-            localizacao=dados['localizacao'],
-            prioridade=dados['prioridade'],
-            status='aberto',
-            usuario_id=user.id,
+                demanda = Demanda(
+                    titulo=dados['titulo'],
+                    descricao=dados['descricao'],
+                    categoria=dados['categoria'],
+                    localizacao=dados['localizacao'],
+                    prioridade=dados['prioridade'],
+                    status='aberto',
+                    usuario_id=user.id,
+                )
+ 
+                db.session.add(demanda)
+                db.session.commit()
+                # Limpa o cache de listagem porque uma nova demanda foi adicionada.
+                _LISTAR_DEMANDAS_CACHE.clear()
+                app.logger.info('Demanda criada em background: %s', demanda.id)
+            except Exception as exc:
+                db.session.rollback()
+                app.logger.error('Erro ao processar demanda em background: %s', exc, exc_info=True)
+                app.logger.error(traceback.format_exc())
+            finally:
+                db.session.remove()
+ 
+    @staticmethod
+    def criar_demanda(data: dict, email: str) -> dict:
+        """
+        Enfileira a criação da demanda para processamento em background.
+        A validação e persistência são feitas em uma thread separada.
+        """
+        app = current_app._get_current_object()
+        worker = threading.Thread(
+            target=DemandaService._background_criar_demanda,
+            args=(data, email, app),
+            daemon=True
         )
+        worker.start()
  
-        db.session.add(demanda)
-        db.session.commit()
-        # Limpa o cache de listagem porque uma nova demanda foi adicionada.
-        _LISTAR_DEMANDAS_CACHE.clear()
-        return demanda
+        return {
+            'status': 'processing',
+            'message': 'Pedido recebido. A demanda está sendo processada em background.'
+        }
  
     @staticmethod
     def listar_demandas(query_params: dict, email: str):

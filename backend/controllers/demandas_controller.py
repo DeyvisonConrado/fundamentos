@@ -13,11 +13,11 @@ class DemandaController:
         data  = request.get_json(silent=True) or {}
     
         try:
-            demanda = DemandaService.criar_demanda(data, email=email)
+            resposta = DemandaService.criar_demanda(data, email=email)
             return standard_response(
-                message='Demanda criada com sucesso.',
-                data={'demanda': DemandaController.demanda_response_schema.dump(demanda)},
-                status_code=201
+                message=resposta['message'],
+                data={'status': resposta['status']},
+                status_code=202
             )
         except LookupError as e:
             return standard_response(message=str(e), status_code=404)

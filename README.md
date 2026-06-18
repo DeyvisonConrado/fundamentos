@@ -23,16 +23,18 @@ O projeto adota o modelo arquitetural **Cliente-Servidor (Web Desacoplada)**. A 
 * **Fluxo:** [ FRONTEND (Next.js) ] --( Requisições HTTP/REST / JSON )--> [ BACKEND (Python API) ]
 * **Simulação:** [ SCRIPT DE TESTE (Python) ] --( Multi-threads / HTTP POST )--> [ BACKEND (Python API) ]
 
+<img width="800" height="450" alt="image" src="https://github.com/user-attachments/assets/46826850-76bd-46cd-899e-d75746d44378" />
+
 ---
 
-## 2. Concorrência e Paralelismo
+## 3. Concorrência e Paralelismo
 * **Mecanismo Utilizado:** Múltiplas Threads (módulo nativo `threading` do Python).
 * **Componente/Módulo:** Localizado no script de simulação/testes (`backend/test_register.py`).
 * **Problema Resolvido:** Em uma Smart City real, múltiplos dispositivos IoT e usuários enviam eventos ao mesmo tempo. O mecanismo de threads permite simular múltiplos fluxos paralelos injetando dados na API HTTP de forma assíncrona, garantindo que o envio de uma requisição não bloqueie nem atrase a execução das outras.
 
 ---
 
-## 3. Otimização
+## 4. Otimização
 * **Ponto de Implementação:** No módulo de serviços do servidor (`backend/services/demandas_service.py`).
 * **O que foi feito:** Foi implementada uma técnica de **Cache em Memória** na listagem de demandas. Ao receber requisições de leitura ou consultas repetitivas dos estados da cidade, o sistema consulta primeiro uma estrutura de cache local (`_LISTAR_DEMANDAS_CACHE`). Se o dado existir, ele é retornado instantaneamente, reduzindo drasticamente o tempo de resposta e poupando recursos de processamento e acessos ao banco de dados. O cache é automaticamente invalidado (limpo) em qualquer operação de escrita (criação, edição ou deleção) para garantir a consistência dos dados.
 * **Otimização Futura:** Para cenários de grande escala, o cache em memória local poderia ser migrado para uma instância dedicada de **Redis**, e o protocolo HTTP tradicional substituído por **WebSockets** ou **gRPC** para comunicação bidirecional de baixíssima latência.

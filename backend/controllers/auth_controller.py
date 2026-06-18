@@ -84,7 +84,16 @@ class AuthController:
                 message="Erro de validação",
                 status_code=400
             )
+        except ValueError as e:
+            # Erros esperados (ex.: credenciais inválidas) retornam 401
+            return standard_response(
+                message=str(e),
+                status_code=401
+            )
         except Exception as e:
+            # Log do traceback para debug e retorno genérico 500
+            import traceback
+            traceback.print_exc()
             return standard_response(
                 message="Erro interno ao fazer login",
                 status_code=500

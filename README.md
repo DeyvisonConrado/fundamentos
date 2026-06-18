@@ -11,7 +11,7 @@ O projeto é composto por um front-end em Next.js e um back-end em Flask (Python
 **Requisitos para a disciplina Fundamentos de Computação Concorrente, Paralela e Distribuída**
 
 
-## 1. Arquitetura Distribuída e Desenho da Arquitetura
+## 1. Arquitetura Distribuída
 O projeto adota o modelo arquitetural **Cliente-Servidor (Web Desacoplada)**. A escolha justifica-se pela separação clara de responsabilidades: o cliente lida estritamente com a interface do usuário e visualização, enquanto o servidor gerencia as regras de negócio, persistência e integridade dos dados da cidade.
 
 ### Componentes e Tecnologias:
@@ -19,7 +19,7 @@ O projeto adota o modelo arquitetural **Cliente-Servidor (Web Desacoplada)**. A 
 * **Backend (Servidor):** Desenvolvido em **Python**, utilizando uma estrutura modular organizada em rotas, controllers, schemas e services (Flask/FastAPI).
 * **Comunicação:** Ocorre exclusivamente através do protocolo **HTTP/REST**, utilizando o formato JSON para o intercâmbio de dados.
 
-### Diagrama de Arquitetura:
+## 2. Desenho da de Arquitetura:
 * **Fluxo:** [ FRONTEND (Next.js) ] --( Requisições HTTP/REST / JSON )--> [ BACKEND (Python API) ]
 * **Simulação:** [ SCRIPT DE TESTE (Python) ] --( Multi-threads / HTTP POST )--> [ BACKEND (Python API) ]
 

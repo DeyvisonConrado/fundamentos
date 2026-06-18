@@ -25,9 +25,15 @@ O projeto adota o modelo arquitetural **Cliente-Servidor (Web Desacoplada)**. A 
 
 ---
 ## 3. Concorrência e Paralelismo
-* **Mecanismo Utilizado:** Múltiplas Threads (módulo nativo `threading` do Python).
-* **Componente/Módulo:** Localizado no script de simulação/testes (`backend/test_register.py`).
-* **Problema Resolvido:** Em uma Smart City real, múltiplos dispositivos IoT e usuários enviam eventos ao mesmo tempo. O mecanismo de threads permite simular múltiplos fluxos paralelos injetando dados na API HTTP de forma assíncrona, garantindo que o envio de uma requisição não bloqueie nem atrase a execução das outras.
+* **Mecanismo Utilizado:** Múltiplas Threads (utilizando o módulo nativo `threading` do Python).
+* **Componente/Módulo Onde Está Presente:** No componente de regras de negócio do servidor, especificamente dentro do método `criar_demanda` no arquivo `backend/services/demandas_service.py`.
+* **Problema que a Abordagem Resolve / Ganho:** Em uma Smart City real, a criação de uma demanda pode envolver processos pesados em background (como validações complexas de esquemas, geocodificação de coordenadas, processamento de mídias anexadas ou futuras integrações de notificações). Se esse fluxo fosse estritamente sequencial, o cidadão ficaria com a tela travada esperando o banco de dados e as validações terminarem, gerando uma péssima experiência de uso.
+  
+  Ao aplicar **Threads** diretamente no método `criar_demanda`, o servidor Flask recebe a requisição HTTP do usuário, valida o token e delega o processamento pesado de persistência para uma thread assíncrona em background. O método principal responde imediatamente ao cliente que o pedido foi recebido com sucesso. 
+  
+  **Ganhos:**
+  * **Operação Não Bloqueante:** Libera o worker principal do servidor para atender outras requisições HTTP sem atraso.
+  * **Tempo de Resposta Reduzido:** A latência percebida pelo usuário final (cidadão) cai drasticamente, pois ele não precisa esperar a transação física do banco de dados PostgreSQL terminar para receber a confirmação na interface.
 
 ---
 

@@ -1,0 +1,73 @@
+from config.extensions import db, bcrypt
+import datetime
+
+class User(db.Model):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default='cidadao') # 'cidadao' ou 'gestor'
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    # cria uma lista de demandas associadas a este usuário.
+    demandas = db.relationship('Demanda', backref='autor', lazy=True)
+    def __init__(self, username, email, password, role='cidadao'):
+        self.username = username
+        self.email = email
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        self.role = role
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password_hash, password)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'role': self.role,
+            'created_at': self.created_at.isoformat()
+        }
+    
+    @staticmethod
+    def get_user_by_username(username):
+        return User.query.filter_by(username=username).first()
+
+    @staticmethod
+    def get_user_by_email(email):
+        return User.query.filter_by(email=email).first()
+    
+    @staticmethod
+    def add(new_user : dict[str,str]):
+        user = User(
+                username=new_user['username'],
+                email=new_user['email'],
+                password=new_user['password'],
+                role=new_user['role']
+            )
+        try:
+            db.session.add(user)
+            db.session.commit()
+            return user
+        except Exception as e:
+            return False
+
+    def update(self, data: dict):
+        """
+        Atualiza os campos do usuário a partir de um dicionário.
+        Faz o hash automático se o campo 'password' for fornecido.
+        """
+        for key, value in data.items():
+            if key == 'password':
+                self.password_hash = bcrypt.generate_password_hash(value).decode('utf-8')
+            elif hasattr(self, key) and key != 'id':
+                setattr(self, key, value)
+        
+        try:
+            db.session.commit()
+            return True
+        except Exception:
+            db.session.rollback()
+            return False
+

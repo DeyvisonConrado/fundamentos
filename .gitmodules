@@ -1,0 +1,3 @@
+﻿[submodule "smart-city"]
+path = smart-city
+url = https://github.com/ndrfelipe/smart-city.git
